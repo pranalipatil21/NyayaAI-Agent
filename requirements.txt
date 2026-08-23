@@ -1,0 +1,22 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+torch==2.6.0+cpu
+streamlit>=1.41.1
+langchain>=0.2.17
+langgraph>=0.2.76
+langchain-community>=0.2.19
+langchain-groq>=0.1.10
+langchain-chroma>=0.1.4
+langchain-huggingface>=0.0.3
+pypdf>=4.3.1
+python-dotenv>=1.0.1
+sentence-transformers>=3.0.0
+transformers>=4.44.0
+scikit-learn>=1.5.2
+gtts>=2.5.3
+protobuf>=4.25.8
+opentelemetry-api>=1.27.0
+opentelemetry-sdk>=1.27.0
+opentelemetry-exporter-otlp-proto-grpc>=1.27.0
+opentelemetry-instrumentation-fastapi>=0.48b0
+posthog>=3.7.4
