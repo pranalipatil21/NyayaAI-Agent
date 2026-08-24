@@ -418,7 +418,7 @@ class NyayaAgentWorkflow:
             self._record_timing(state, "generation", started_at)
             return state
 
-        context = "\n\n".join([source["content"] for source in state.get("sources", [])])
+        context = "\n\n".join([source["content"] for source in state.get("sources", [])])[:2500]
         lang_instruction = ""
         if state.get("language") and state["language"] != "English":
             target_lang = state["language"].split(" ")[0]
@@ -433,6 +433,7 @@ class NyayaAgentWorkflow:
             articles=", ".join(state.get("relevant_articles", [])) or "Use only supported Articles from context",
             verification=state.get("verification_result", "Verification pending"),
         )
+        safe_context = context.replace("{", "(").replace("}", ")")
         if self.engine.llm is None:
             self.engine._init_llm()
 
@@ -448,12 +449,14 @@ class NyayaAgentWorkflow:
             try:
                 response = self.engine.llm.invoke(
                     [
-                        ("system", SYSTEM_PROMPT.format(context=context) + lang_instruction),
+                        ("system", SYSTEM_PROMPT.format(context=safe_context) + lang_instruction),
                         ("human", prompt + f"\n\nUser problem: {state['query']}"),
                     ]
                 )
                 state["final_response"] = response.content
-            except Exception:
+            except Exception as exc:
+                import logging
+                logging.error("Response agent LLM invoke error: %s", exc)
                 state["final_response"] = self.engine._fallback_response(
                     state["query"],
                     state.get("sources", []),

@@ -109,7 +109,7 @@ class NyayaEngine:
             try:
                 self.llm = ChatGroq(
                     api_key=groq_key,
-                    model=os.getenv("GROQ_MODEL", "groq/compound"),
+                    model=os.getenv("GROQ_MODEL", "qwen/qwen3.6-27b"),
                     temperature=0.1
                 )
             except Exception as exc:
@@ -161,7 +161,8 @@ class NyayaEngine:
             target_lang = language.split(" ")[0]
             lang_instruction = f"\n\nCRITICAL LANGUAGE MANDATE: You MUST write your ENTIRE final response (including all headings, bullet points, rights descriptions, action steps, and disclaimers) strictly in {target_lang} ({language}). Do NOT output in Hindi or English if {target_lang} is requested! Use native {target_lang} vocabulary and script. Keep official Article numbers (like 'Article 21') in English."
             
-        formatted_prompt = SYSTEM_PROMPT.format(context=context) + lang_instruction
+        safe_context = context.replace("{", "(").replace("}", ")")
+        formatted_prompt = SYSTEM_PROMPT.format(context=safe_context) + lang_instruction
         
         # Structure source documents for the UI to display explainability information
         sources = []
@@ -195,13 +196,7 @@ class NyayaEngine:
         }
 
     def _fallback_response(self, query, sources, language="English", articles=None, verification=None):
-        """Builds a grounded response when no hosted LLM API key is configured."""
-        if language and language != "English":
-            return (
-                "No hosted LLM API key is configured, so NyayaAI cannot generate multilingual LLM responses yet. "
-                "Please configure OPENROUTER_API_KEY or GROQ_API_KEY to enable full multilingual response generation."
-            )
-
+        """Builds a grounded response when no hosted LLM API key is configured or on transient failure."""
         articles = articles or []
         article_text = ", ".join(articles) if articles else "the retrieved Constitutional provisions"
         verification_text = verification or "The answer is based on retrieved Constitution snippets."
