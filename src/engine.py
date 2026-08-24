@@ -224,8 +224,10 @@ class NyayaEngine:
                 file=("recorded_audio.wav", audio_bytes),
                 model="whisper-large-v3",
                 prompt="Indian legal grievance, Indian names, Constitution of India, Hindi, Marathi, Tamil, Telugu, Bengali",
-                response_format="text"
+                response_format="verbose_json"
             )
-            return transcription
+            text = getattr(transcription, "text", str(transcription))
+            detected_lang = getattr(transcription, "language", "english")
+            return {"text": text, "language": str(detected_lang)}
         except Exception as e:
             raise RuntimeError(f"Voice transcription failed: {str(e)}")

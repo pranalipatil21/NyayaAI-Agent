@@ -397,6 +397,21 @@ st.markdown(
         margin-top: 0.16rem;
     }
 
+    .audio-badge-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        border: 1px solid #C4B293;
+        background: #FAF6EE;
+        padding: 0.35rem 0.85rem;
+        border-radius: 20px;
+        font-size: 0.88rem;
+        font-weight: 600;
+        color: #8A6A38;
+        margin-top: 0.75rem;
+        margin-bottom: 0.4rem;
+    }
+
     @keyframes nyayaPulse {
         0% { box-shadow: 0 0 0 0 rgba(32, 33, 35, 0.24); }
         70% { box-shadow: 0 0 0 7px rgba(32, 33, 35, 0); }
@@ -470,8 +485,28 @@ def load_nyaya_engine():
     return engine
 
 
+def map_whisper_lang_to_app_lang(detected_lang):
+    """Maps Groq Whisper detected language to NyayaAI supported languages."""
+    if not detected_lang:
+        return None
+    l = detected_lang.lower().strip()
+    if "hi" in l or "hindi" in l:
+        return "Hindi (हिन्दी)"
+    elif "mr" in l or "marathi" in l:
+        return "Marathi (मराठी)"
+    elif "ta" in l or "tamil" in l:
+        return "Tamil (தமிழ்)"
+    elif "te" in l or "telugu" in l:
+        return "Telugu (తెలుగు)"
+    elif "bn" in l or "bengali" in l:
+        return "Bengali (বাংলা)"
+    elif "en" in l or "english" in l:
+        return "English"
+    return None
+
+
 def generate_speech(text, language_name):
-    """Generates Text-To-Speech MP3 audio bytes using gTTS."""
+    """Generates Text-To-Speech MP3 audio bytes using gTTS in target language."""
     try:
         from gtts import gTTS
 
@@ -658,9 +693,17 @@ def handle_query(query_text, language):
         sources = response_data.get("sources", [])
         st.markdown(answer)
 
-        # Generate audio output automatically for both Voice & Text response
+        # Generate audio output automatically in target input/selected language
         audio_bytes = generate_speech(answer, language)
         if audio_bytes:
+            st.markdown(
+                """
+                <div class="audio-badge-btn">
+                    <span>🔊</span> Play Audio Response
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
             st.audio(audio_bytes, format="audio/mp3")
 
         is_rejected = "I am unable to deliver an answer to this question" in answer
@@ -702,6 +745,8 @@ if "pending_query" not in st.session_state:
     st.session_state.pending_query = None
 if "evaluation_results" not in st.session_state:
     st.session_state.evaluation_results = None
+if "selected_language" not in st.session_state:
+    st.session_state.selected_language = "English"
 
 
 # --- Sidebar Setup ---
@@ -720,12 +765,15 @@ with st.sidebar:
     )
 
     st.markdown("<div class='sidebar-section-header'>🌐 Language / भाषा</div>", unsafe_allow_html=True)
+    lang_index = LANGUAGES.index(st.session_state.selected_language) if st.session_state.selected_language in LANGUAGES else 0
     selected_lang = st.selectbox(
         "Choose consultation language:",
         LANGUAGES,
-        index=0,
+        index=lang_index,
         help="Select the language for AI responses and voice playback.",
+        key="lang_select_box",
     )
+    st.session_state.selected_language = selected_lang
 
     st.markdown("<div class='sidebar-section-header'>💡 Example Scenarios</div>", unsafe_allow_html=True)
 
@@ -903,11 +951,21 @@ with tab_assistant:
             if os.getenv("GROQ_API_KEY"):
                 with st.spinner("Transcribing your voice grievance with Groq Whisper..."):
                     try:
-                        # Reset buffer position for reading
                         recorded_audio.seek(0)
-                        voice_transcription = engine.transcribe_audio(recorded_audio)
+                        res = engine.transcribe_audio(recorded_audio)
+                        if isinstance(res, dict):
+                            voice_transcription = res.get("text", "")
+                            detected_lang = res.get("language", "")
+                        else:
+                            voice_transcription = str(res)
+                            detected_lang = ""
+
                         st.session_state.processed_audio_hashes.add(audio_hash)
                         st.session_state.pending_query = voice_transcription
+
+                        mapped = map_whisper_lang_to_app_lang(detected_lang)
+                        if mapped:
+                            st.session_state.selected_language = mapped
                     except Exception as exc:
                         st.error(f"Voice transcription error: {exc}")
             else:
@@ -922,8 +980,16 @@ with tab_assistant:
             st.markdown(message["content"])
 
             if message["role"] == "assistant":
-                # Render Text-To-Speech audio player alongside response
+                # Render Text-To-Speech audio player alongside response with pill badge
                 if message.get("audio_bytes"):
+                    st.markdown(
+                        """
+                        <div class="audio-badge-btn">
+                            <span>🔊</span> Play Audio Response
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
                     st.audio(message["audio_bytes"], format="audio/mp3")
 
                 render_sources(message.get("sources", []))
@@ -942,5 +1008,5 @@ with tab_assistant:
         active_query = chat_input_text
 
     if active_query:
-        handle_query(active_query, selected_lang)
+        handle_query(active_query, st.session_state.selected_language)
         st.rerun()
