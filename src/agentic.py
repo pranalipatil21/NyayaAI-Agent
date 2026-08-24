@@ -434,6 +434,9 @@ class NyayaAgentWorkflow:
             verification=state.get("verification_result", "Verification pending"),
         )
         if self.engine.llm is None:
+            self.engine._init_llm()
+
+        if self.engine.llm is None:
             state["final_response"] = self.engine._fallback_response(
                 state["query"],
                 state.get("sources", []),

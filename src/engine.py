@@ -92,6 +92,10 @@ class NyayaEngine:
         )
         
         self.llm = None
+        self._init_llm()
+
+    def _init_llm(self):
+        load_dotenv(override=True)
         groq_key = os.getenv("GROQ_API_KEY", "").strip()
         if groq_key.startswith("ygsk_"):
             groq_key = groq_key[1:]
@@ -102,11 +106,15 @@ class NyayaEngine:
                 model=os.getenv("OPENROUTER_MODEL")
             )
         elif groq_key:
-            self.llm = ChatGroq(
-                api_key=groq_key,
-                model=os.getenv("GROQ_MODEL", "groq/compound"),
-                temperature=0.1
-            )
+            try:
+                self.llm = ChatGroq(
+                    api_key=groq_key,
+                    model=os.getenv("GROQ_MODEL", "groq/compound"),
+                    temperature=0.1
+                )
+            except Exception as exc:
+                logging.warning("Failed to initialize ChatGroq: %s", exc)
+                self.llm = None
         
         # 2. Setup Storage
         self.vectorstore = Chroma(
@@ -166,6 +174,9 @@ class NyayaEngine:
                 "source": source_file,
                 "page": page_num
             })
+
+        if self.llm is None:
+            self._init_llm()
 
         response_content = self._fallback_response(query, sources=sources, language=language)
         if self.llm is not None:
