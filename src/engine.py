@@ -92,13 +92,18 @@ class NyayaEngine:
         )
         
         self.llm = None
+        groq_key = os.getenv("GROQ_API_KEY", "").strip()
+        if groq_key.startswith("ygsk_"):
+            groq_key = groq_key[1:]
+
         if os.getenv("OPENROUTER_API_KEY"):
             self.llm = OpenRouterChat(
                 api_key=os.getenv("OPENROUTER_API_KEY"),
                 model=os.getenv("OPENROUTER_MODEL")
             )
-        elif os.getenv("GROQ_API_KEY"):
+        elif groq_key:
             self.llm = ChatGroq(
+                api_key=groq_key,
                 model=os.getenv("GROQ_MODEL", "groq/compound"),
                 temperature=0.1
             )
@@ -213,9 +218,12 @@ class NyayaEngine:
         """Transcribes audio using Groq's Whisper API in a multilingual-aware manner."""
         try:
             from groq import Groq
-            if not os.getenv("GROQ_API_KEY"):
+            raw_key = os.getenv("GROQ_API_KEY", "").strip()
+            if raw_key.startswith("ygsk_"):
+                raw_key = raw_key[1:]
+            if not raw_key:
                 raise RuntimeError("GROQ_API_KEY is not configured.")
-            client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+            client = Groq(api_key=raw_key)
             
             # Read recorded audio bytes
             audio_bytes = audio_file.read()
