@@ -145,7 +145,8 @@ class NyayaEngine:
         # Append language instruction to LLM prompt
         lang_instruction = ""
         if language and language != "English":
-            lang_instruction = f"\n\nCRITICAL LANGUAGE INSTRUCTION: You MUST translate and write your entire response (including all headings, bullet points, rights descriptions, action steps, disclaimers, and fallback responses) into {language}. Do not output any English text unless it is an official legal terms or article numbers (like 'Article 21')."
+            target_lang = language.split(" ")[0]
+            lang_instruction = f"\n\nCRITICAL LANGUAGE MANDATE: You MUST write your ENTIRE final response (including all headings, bullet points, rights descriptions, action steps, and disclaimers) strictly in {target_lang} ({language}). Do NOT output in Hindi or English if {target_lang} is requested! Use native {target_lang} vocabulary and script. Keep official Article numbers (like 'Article 21') in English."
             
         formatted_prompt = SYSTEM_PROMPT.format(context=context) + lang_instruction
         

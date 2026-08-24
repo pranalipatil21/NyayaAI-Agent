@@ -421,8 +421,10 @@ class NyayaAgentWorkflow:
         context = "\n\n".join([source["content"] for source in state.get("sources", [])])
         lang_instruction = ""
         if state.get("language") and state["language"] != "English":
+            target_lang = state["language"].split(" ")[0]
             lang_instruction = (
-                f"\n\nWrite the entire response in {state['language']}. Keep official Article numbers in English."
+                f"\n\nCRITICAL LANGUAGE MANDATE: You MUST write your ENTIRE final response (including all headings, bullet points, constitutional explanations, suggested actions, and legal disclaimers) strictly in {target_lang} ({state['language']}). "
+                f"Do NOT output in Hindi or English if {target_lang} is requested! Use proper native {target_lang} vocabulary and script. Keep only official Article numbers (like 'Article 21') in English."
             )
         prompt = AGENTIC_RESPONSE_PROMPT.format(
             context=context,
