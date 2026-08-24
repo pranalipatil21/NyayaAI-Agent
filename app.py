@@ -868,7 +868,7 @@ with tab_home:
     if os.path.exists("data/lady_justice.png"):
         col_center_left, col_center, col_center_right = st.columns([1, 3, 1])
         with col_center:
-            st.image("data/lady_justice.png", use_column_width=True)
+            st.image("data/lady_justice.png", use_container_width=True)
             st.markdown(
                 """
                 <div style="text-align:center; font-family:'Cinzel', serif; font-size:0.9rem; font-weight:700; color:#8A6A38; letter-spacing:0.1em; margin-top:0.4rem; margin-bottom:1.5rem;">
