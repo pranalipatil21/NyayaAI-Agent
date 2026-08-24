@@ -43,7 +43,7 @@ from langchain_groq import ChatGroq
 from langchain_chroma import Chroma
 from .prompts import SYSTEM_PROMPT
 
-load_dotenv()
+load_dotenv(override=True)
 
 
 @dataclass
