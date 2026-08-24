@@ -99,7 +99,7 @@ class NyayaEngine:
             )
         elif os.getenv("GROQ_API_KEY"):
             self.llm = ChatGroq(
-                model=os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
+                model=os.getenv("GROQ_MODEL", "groq/compound"),
                 temperature=0.1
             )
         
